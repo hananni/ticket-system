@@ -1,0 +1,46 @@
+version: '3.8'
+x-common-variables: &common-variables
+  - NODE_ENV=development
+  - DB_HOST=tickets_db
+  - DB_USER=tickets
+  - DB_PWD=tickets
+  - DB_NAME=tickets
+  - DB_PORT=5432
+services:
+  tickets:
+    container_name: tickets_service
+    image: ticket-system:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - 3000:3000
+    environment: *common-variables
+    networks:
+      - tickets_dev
+    depends_on:
+      - tickets_db
+  tickets_db:
+    container_name: tickets_db
+    image: postgres:latest
+    restart: unless-stopped
+    ports:
+      - 7001:5432
+    environment:
+      POSTGRES_USER: tickets
+      POSTGRES_PASSWORD: tickets
+      POSTGRES_DB: tickets
+    volumes:
+      - .docker-data/postgres:/var/lib/postgresql
+    networks:
+      - tickets_dev
+  migration:
+    image: ticket-system:latest
+    environment: *common-variables
+    command: ['yarn', 'migrate']
+    depends_on:
+      - tickets_db
+    networks:
+      - tickets_dev
+networks:
+  tickets_dev: {}
